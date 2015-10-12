@@ -1,0 +1,18 @@
+{
+  "mapping": {
+    "g": "minecraft:gold_block"
+  },
+  "structure": [
+    ["h"],
+    ["g"],
+    ["g"]
+  ],
+  "consumeStructure": [
+    ["1"],
+    ["1"],
+    ["1"]
+  ],
+  "activationItem": "minecraft:golden_apple",
+  "activationItemHelpText": "a golden apple.",
+  "structureHelpText": ["To prepare the ritual structure, stack two gold blocks on top of each other and place the player head on top."]
+}

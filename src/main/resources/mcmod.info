@@ -1,0 +1,16 @@
+[
+{
+  "modid": "HardcoreRevival",
+  "name": "Hardcore Revival",
+  "description": "Example placeholder mod.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["BlayTheNinth"],
+  "credits": "BlayTheNinth and twitch.tv/zeekdageek",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
