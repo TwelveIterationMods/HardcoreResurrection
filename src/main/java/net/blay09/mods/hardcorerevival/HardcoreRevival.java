@@ -187,7 +187,9 @@ public class HardcoreRevival {
     public static EntityPlayerMP revivePlayer(EntityPlayerMP entityPlayer, World world, int x, int y, int z) {
         if (entityPlayer != null && entityPlayer.getHealth() <= 0f && unbanHardcoreDeath(entityPlayer.getGameProfile())) {
             EntityPlayerMP respawnPlayer = MinecraftServer.getServer().getConfigurationManager().respawnPlayer(entityPlayer, 0, false);
-            respawnPlayer.travelToDimension(world.provider.dimensionId);
+            if(world.provider.dimensionId != respawnPlayer.dimension) {
+                respawnPlayer.travelToDimension(world.provider.dimensionId);
+            }
             respawnPlayer.playerNetServerHandler.setPlayerLocation(x, y, z, entityPlayer.rotationYaw, entityPlayer.rotationPitch);
             entityPlayer.playerNetServerHandler.playerEntity = respawnPlayer;
             respawnPlayer.setHealth(HardcoreRevival.healthOnRespawn);

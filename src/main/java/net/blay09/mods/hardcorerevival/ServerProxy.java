@@ -39,6 +39,7 @@ import net.minecraftforge.event.world.BlockEvent;
 
 import java.util.*;
 
+@SuppressWarnings("unused")
 public class ServerProxy extends CommonProxy {
 
     public static final Map<GameProfile, EntityPlayerMP> deadPlayers = new HashMap<>();
@@ -87,20 +88,22 @@ public class ServerProxy extends CommonProxy {
         if (event.entity instanceof EntityPlayer) {
             deadPlayers.put(((EntityPlayer) event.entity).getGameProfile(), (EntityPlayerMP) event.entity);
             final World world = event.entity.worldObj;
-            boolean foundSpot = false;
             int x = (int) event.entity.posX;
             int y = (int) event.entity.posY;
             int z = (int) event.entity.posZ;
+            boolean foundSpot = world.isAirBlock(x, y, z);
             final int range = 5;
-            for (int yOff = -range; yOff <= range; yOff++) {
-                for (int zOff = -range; zOff <= range; zOff++) {
-                    for (int xOff = -range; xOff <= range; xOff++) {
-                        if (world.isAirBlock(x + xOff, y + yOff, z + zOff)) {
-                            foundSpot = true;
-                            x = x + xOff;
-                            y = y + yOff;
-                            z = z + zOff;
-                            break;
+            if(!foundSpot) {
+                for (int yOff = -range; yOff <= range; yOff++) {
+                    for (int zOff = -range; zOff <= range; zOff++) {
+                        for (int xOff = -range; xOff <= range; xOff++) {
+                            if (world.isAirBlock(x + xOff, y + yOff, z + zOff)) {
+                                foundSpot = true;
+                                x = x + xOff;
+                                y = y + yOff;
+                                z = z + zOff;
+                                break;
+                            }
                         }
                     }
                 }
@@ -196,7 +199,7 @@ public class ServerProxy extends CommonProxy {
         if (HardcoreRevival.experienceCost > 0) {
             event.entityPlayer.addExperienceLevel(-HardcoreRevival.experienceCost);
         }
-        for (ConfiguredPotionEffect potionEffect : HardcoreRevival.effectsOnRespawn) {
+        for (ConfiguredPotionEffect potionEffect : HardcoreRevival.effectsOnRitual) {
             event.entityPlayer.addPotionEffect(new PotionEffect(potionEffect.potion.getId(), potionEffect.timeInTicks, potionEffect.potionLevel));
         }
     }
