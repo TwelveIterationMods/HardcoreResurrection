@@ -190,6 +190,10 @@ public class ServerProxy extends CommonProxy {
             event.entityPlayer.addChatMessage(new ChatComponentText("Nothing happens. It appears " + skull.func_152108_a().getName() + "'s soul isn't here right now."));
             return;
         }
+        if(event.entityPlayer.getHealth() < HardcoreRevival.damageOnRitual) {
+            event.entityPlayer.addChatMessage(new ChatComponentText("Well, that was dumb."));
+            return;
+        }
         HardcoreRevival.ritualStructure.consumeStructure(event.world, event.x, event.y, event.z);
         HardcoreRevival.ritualStructure.consumeActivationItem(heldItem);
         event.world.addWeatherEffect(new EntityLightningBolt(event.world, event.x, event.y - HardcoreRevival.ritualStructure.getHeadY(), event.z));

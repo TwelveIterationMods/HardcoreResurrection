@@ -214,7 +214,7 @@ public class RitualStructure {
                     StructureBlock structureBlock = structureMap[i][j][k];
                     if(structureBlock.block == block && (structureBlock.metadata == -1 || structureBlock.metadata == metadata)) {
                         if(consumeMap[i][j][k]) {
-                            world.setBlockToAir(x, y, z);
+                            world.setBlockToAir(x + i, y + j, z + k);
                         }
                     }
                 }
