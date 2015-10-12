@@ -54,8 +54,8 @@ public class RitualStructure {
 
     public RitualStructure(JsonObject object) {
         JsonObject mapping = object.getAsJsonObject("mapping");
-        final Map<Character, StructureBlock> blockMapping = new HashMap<Character, StructureBlock>();
-        blockMapping.put('H', new StructureBlock(Blocks.skull, 0));
+        final Map<Character, StructureBlock> blockMapping = new HashMap<>();
+        blockMapping.put('H', new StructureBlock(Blocks.skull, -1));
         for(Map.Entry<String, JsonElement> entry : mapping.entrySet()) {
             if(entry.getKey().length() != 1) {
                 throw new RuntimeException("Configured hardcore revival ritual activation structure is invalid: mapping keys need to be one character long");
@@ -101,7 +101,7 @@ public class RitualStructure {
                             throw new RuntimeException("Configured hardcore revival ritual structure is invalid: only one player head in the ritual allowed");
                         }
                         headX = x;
-                        headY = y;
+                        headY = structureHeight - y - 1;
                         headZ = z;
                         structureContainsHead = true;
                     }

@@ -10,6 +10,7 @@ import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.entity.item.EntityFireworkRocket;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.item.EntityMinecart;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
@@ -28,8 +29,11 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldSettings;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.item.ItemExpireEvent;
+import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.minecart.MinecartUpdateEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 
@@ -45,17 +49,13 @@ public class ServerProxy extends CommonProxy {
         if (HardcoreRevival.enableHardcoreRevival) {
             FMLCommonHandler.instance().bus().register(this);
             MinecraftForge.EVENT_BUS.register(this);
+        }
+    }
 
-            // GregTheCart Revival
-            if (HardcoreRevival.enableSillyThings) {
-                ItemStack greg = new ItemStack(Items.minecart);
-                NBTTagCompound tagCompound = new NBTTagCompound();
-                NBTTagCompound display = new NBTTagCompound();
-                display.setString("Name", "GregTheCart");
-                tagCompound.setTag("display", display);
-                greg.setTagCompound(tagCompound);
-                GameRegistry.addSmelting(greg, new ItemStack(Items.iron_ingot, 1), 0f);
-            }
+    @SubscribeEvent
+    public void onPlayerJoined(PlayerEvent.PlayerLoggedInEvent event) {
+        if(event.player.getHealth() <= 0) {
+            deadPlayers.put(event.player.getGameProfile(), (EntityPlayerMP) event.player);
         }
     }
 
@@ -176,13 +176,15 @@ public class ServerProxy extends CommonProxy {
             return;
         }
         if (!HardcoreRevival.ritualStructure.checkStructure(event.world, event.x, event.y, event.z)) {
+            event.entityPlayer.addChatMessage(new ChatComponentText("Nothing happens. It appears the ritual structure is not complete."));
             return;
         }
         if (event.entityPlayer.experienceLevel < HardcoreRevival.experienceCost) {
+            event.entityPlayer.addChatMessage(new ChatComponentText("Nothing happens. It appears you're just not experienced enough."));
             return;
         }
         if (HardcoreRevival.revivePlayer(skull.func_152108_a().getName(), event.world, event.x, event.y - HardcoreRevival.ritualStructure.getHeadY(), event.z) == null) {
-            event.entityPlayer.addChatMessage(new ChatComponentText(skull.func_152108_a().getName() + " is not online at the moment."));
+            event.entityPlayer.addChatMessage(new ChatComponentText("Nothing happens. It appears " + skull.func_152108_a().getName() + "'s soul isn't here right now."));
             return;
         }
         HardcoreRevival.ritualStructure.consumeStructure(event.world, event.x, event.y, event.z);
@@ -200,14 +202,14 @@ public class ServerProxy extends CommonProxy {
     }
 
     @SubscribeEvent
-    public void onItemSmelted(PlayerEvent.ItemSmeltedEvent event) {
-        if (HardcoreRevival.enableSillyThings) {
-            if (event.smelting.getItem() == Items.minecart) {
-                if (event.smelting.getDisplayName().equals("GregTheCart")) {
-                    EntityPlayerMP greg = HardcoreRevival.revivePlayer("GregTheCart", event.player.worldObj, (int) event.player.posX, (int) event.player.posY, (int) event.player.posZ);
-                    if (greg != null) {
-                        greg.setFire(Integer.MAX_VALUE);
-                    }
+    public void onMinecartUpdate(MinecartUpdateEvent event) {
+        if(event.minecart.isBurning()) {
+            if(event.minecart.getCommandSenderName().equals("GregTheCart")) {
+                EntityPlayer greg = HardcoreRevival.revivePlayer("GregTheCart", event.minecart.worldObj, (int) event.x, (int) event.y, (int) event.z);
+                if(greg != null) {
+                    event.minecart.setDead();
+                    event.minecart.worldObj.addWeatherEffect(new EntityLightningBolt(event.minecart.worldObj, event.x, event.y, event.z));
+                    greg.setFire(Integer.MAX_VALUE);
                 }
             }
         }
