@@ -171,8 +171,6 @@ public class HardcoreRevival {
         event.registerServerCommand(new CommandHardcoreRevival());
     }
 
-
-
     public static ItemStack getHelpBook(String deadPerson) {
         ItemStack itemStack = new ItemStack(Items.written_book);
         NBTTagCompound tagCompound = new NBTTagCompound();

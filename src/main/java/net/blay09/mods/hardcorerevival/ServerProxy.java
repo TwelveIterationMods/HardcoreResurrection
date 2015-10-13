@@ -65,28 +65,24 @@ public class ServerProxy extends CommonProxy {
     }
 
     @SubscribeEvent
-    public void onBreakBlock(BlockEvent.BreakEvent event) {
-        if (event.block == Blocks.skull) {
-            TileEntitySkull skull = (TileEntitySkull) event.world.getTileEntity(event.x, event.y, event.z);
-            if (skull.func_152108_a() != null && event.getPlayer() != null) {
-                NBTTagCompound tagCompound = HardcoreRevival.getHardcoreRevivalData(event.getPlayer());
-                if (!tagCompound.getBoolean("HelpBook")) {
-                    ItemStack itemStack = HardcoreRevival.getHelpBook(skull.func_152108_a().getName());
-                    if(!event.getPlayer().inventory.addItemStackToInventory(itemStack)) {
-                        event.getPlayer().dropPlayerItemWithRandomChoice(itemStack, false);
-                    }
-                    tagCompound.setBoolean("HelpBook", true);
-                }
-            }
-        }
-    }
-
-    @SubscribeEvent
     public void onPlayerDeath(LivingDeathEvent event) {
         if (event.entity instanceof EntityPlayerMP) {
             EntityPlayerMP entityPlayer = (EntityPlayerMP) event.entity;
             deadPlayers.put(entityPlayer.getGameProfile(), entityPlayer);
             HardcoreRevival.spawnPlayerGrave(event.entity.worldObj, (int) event.entity.posX, (int) event.entity.posY, (int) event.entity.posZ, entityPlayer);
+        }
+        for(Object obj : MinecraftServer.getServer().getConfigurationManager().playerEntityList) {
+            EntityPlayer entityPlayer = (EntityPlayer) obj;
+            if(entityPlayer != event.entity) {
+                NBTTagCompound tagCompound = HardcoreRevival.getHardcoreRevivalData(entityPlayer);
+                if (!tagCompound.getBoolean("HelpBook")) {
+                    ItemStack itemStack = HardcoreRevival.getHelpBook(event.entity.getCommandSenderName());
+                    if(!entityPlayer.inventory.addItemStackToInventory(itemStack)) {
+                        entityPlayer.dropPlayerItemWithRandomChoice(itemStack, false);
+                    }
+                    tagCompound.setBoolean("HelpBook", true);
+                }
+            }
         }
     }
 
