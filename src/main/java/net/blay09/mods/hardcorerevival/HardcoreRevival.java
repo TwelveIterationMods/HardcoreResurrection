@@ -24,12 +24,15 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.UserListBans;
 import net.minecraft.server.management.UserListBansEntry;
 import net.minecraft.tileentity.TileEntitySkull;
+import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.config.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import scala.collection.parallel.ParIterableLike;
 
 import java.io.*;
 import java.util.regex.Matcher;
@@ -214,14 +217,11 @@ public class HardcoreRevival {
         return itemStack;
     }
 
-    public static EntityPlayerMP revivePlayer(String playerName, World world, int x, int y, int z) {
-        return revivePlayer(MinecraftServer.getServer().getConfigurationManager().func_152612_a(playerName), world, x, y, z);
-    }
-
     public static EntityPlayerMP revivePlayer(EntityPlayerMP entityPlayer, World world, int x, int y, int z) {
         if (entityPlayer != null && entityPlayer.getHealth() <= 0f && unbanHardcoreDeath(entityPlayer.getGameProfile())) {
+            entityPlayer.setSpawnChunk(new ChunkCoordinates(x, y, z), true, world.provider.dimensionId);
             EntityPlayerMP respawnPlayer = MinecraftServer.getServer().getConfigurationManager().respawnPlayer(entityPlayer, 0, false);
-            if(world.provider.dimensionId != respawnPlayer.dimension) {
+            if(respawnPlayer.dimension != world.provider.dimensionId) {
                 respawnPlayer.travelToDimension(world.provider.dimensionId);
             }
             entityPlayer.playerNetServerHandler.playerEntity = respawnPlayer;

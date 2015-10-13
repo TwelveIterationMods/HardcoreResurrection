@@ -219,7 +219,7 @@ public class RitualStructure {
     }
 
     public boolean checkActivationItem(ItemStack itemStack) {
-        return itemStack != null && (activationItemStack.getHasSubtypes() ? ItemStack.areItemStacksEqual(itemStack, activationItemStack) : activationItemStack.getItem() == itemStack.getItem());
+        return itemStack != null && activationItemStack.isItemEqual(itemStack) && ItemStack.areItemStackTagsEqual(itemStack, activationItemStack);
     }
 
     public void consumeActivationItem(ItemStack itemStack) {

@@ -4,6 +4,7 @@ import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.command.WrongUsageException;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 
@@ -49,11 +50,11 @@ public class CommandHardcoreRevival extends CommandBase {
                 targetPlayer.dropPlayerItemWithRandomChoice(helpBookStack, false);
             }
         } else if (cmd.equals("revive")) {
-            EntityPlayer targetPlayer = getPlayer(sender, args.length >= 2 ? args[1] : sender.getCommandSenderName());
+            EntityPlayerMP targetPlayer = getPlayer(sender, args.length >= 2 ? args[1] : sender.getCommandSenderName());
             if (targetPlayer == null) {
                 throw new WrongUsageException(getCommandUsage(sender));
             }
-            HardcoreRevival.revivePlayer(targetPlayer.getCommandSenderName(), sender.getEntityWorld(), sender.getPlayerCoordinates().posX, sender.getPlayerCoordinates().posY, sender.getPlayerCoordinates().posZ);
+            HardcoreRevival.revivePlayer(targetPlayer, sender.getEntityWorld(), sender.getPlayerCoordinates().posX, sender.getPlayerCoordinates().posY, sender.getPlayerCoordinates().posZ);
         } else if (cmd.equals("spawngrave")) {
             EntityPlayer targetPlayer = getPlayer(sender, args.length >= 2 ? args[1] : sender.getCommandSenderName());
             if (targetPlayer == null) {

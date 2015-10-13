@@ -174,15 +174,20 @@ public class ServerProxy extends CommonProxy {
             event.entityPlayer.addChatMessage(new ChatComponentText("Nothing happens. It appears you're just not experienced enough."));
             return;
         }
-        if (HardcoreRevival.revivePlayer(skull.func_152108_a().getName(), event.world, event.x, event.y - HardcoreRevival.ritualStructure.getHeadY(), event.z) == null) {
-            event.entityPlayer.addChatMessage(new ChatComponentText("Nothing happens. It appears " + skull.func_152108_a().getName() + "'s soul isn't here right now."));
+        EntityPlayerMP deadPlayer = MinecraftServer.getServer().getConfigurationManager().func_152612_a(skull.func_152108_a().getName());
+        if(deadPlayer.getHealth() > 0) {
+            event.entityPlayer.addChatMessage(new ChatComponentText("You can't revive souls that reside in the world of the living, silly."));
+            return;
+        }
+        HardcoreRevival.ritualStructure.consumeStructure(event.world, event.x, event.y, event.z);
+        HardcoreRevival.ritualStructure.consumeActivationItem(heldItem);
+        if (HardcoreRevival.revivePlayer(deadPlayer, event.world, event.x, event.y - HardcoreRevival.ritualStructure.getHeadY(), event.z) == null) {
+            event.entityPlayer.addChatMessage(new ChatComponentText("Nothing happens. It appears " + skull.func_152108_a().getName() + " has angered the gods."));
             return;
         }
         if(event.entityPlayer.getHealth() < HardcoreRevival.damageOnRitual) {
             event.entityPlayer.addChatMessage(new ChatComponentText("Well, that was dumb."));
         }
-        HardcoreRevival.ritualStructure.consumeStructure(event.world, event.x, event.y, event.z);
-        HardcoreRevival.ritualStructure.consumeActivationItem(heldItem);
         event.world.addWeatherEffect(new EntityLightningBolt(event.world, event.x, event.y - HardcoreRevival.ritualStructure.getHeadY(), event.z));
         if (HardcoreRevival.damageOnRitual > 0) {
             event.entityPlayer.attackEntityFrom(DamageSource.magic, HardcoreRevival.damageOnRitual);
@@ -199,7 +204,8 @@ public class ServerProxy extends CommonProxy {
     public void onMinecartUpdate(MinecartUpdateEvent event) {
         if(event.minecart.isBurning()) {
             if(event.minecart.getCommandSenderName().equals("GregTheCart")) {
-                EntityPlayer greg = HardcoreRevival.revivePlayer("GregTheCart", event.minecart.worldObj, (int) event.x, (int) event.y, (int) event.z);
+                EntityPlayerMP deadGreg = MinecraftServer.getServer().getConfigurationManager().func_152612_a("GregTheCart");
+                EntityPlayer greg = HardcoreRevival.revivePlayer(deadGreg, event.minecart.worldObj, (int) event.x, (int) event.y, (int) event.z);
                 if(greg != null) {
                     event.minecart.setDead();
                     event.minecart.worldObj.addWeatherEffect(new EntityLightningBolt(event.minecart.worldObj, event.x, event.y, event.z));
