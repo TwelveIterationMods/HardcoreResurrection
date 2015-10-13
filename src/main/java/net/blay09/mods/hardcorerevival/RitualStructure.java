@@ -17,7 +17,6 @@ import net.minecraftforge.common.util.Constants;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class RitualStructure {
 
@@ -38,9 +37,6 @@ public class RitualStructure {
             this.metadata = metadata;
         }
     }
-
-    private static final Pattern itemStackPattern = Pattern.compile("(?:([0-9]+)x)?([\\w:]+)(?:@([0-9]+))?");
-    private static final Pattern blockPattern = Pattern.compile("([\\w:]+)(?:@([0-9]+))?");
 
     private final ItemStack activationItemStack;
     private final boolean consumeActivationItem;
@@ -67,7 +63,7 @@ public class RitualStructure {
             if(blockMapping.containsKey(c)) {
                 throw new RuntimeException("Configured hardcore revival ritual activation structure is invalid: mapping '" + entry.getKey() + "' is alerady defined");
             }
-            Matcher matcher = blockPattern.matcher(entry.getValue().getAsString());
+            Matcher matcher = HardcoreRevival.BLOCK_PATTERN.matcher(entry.getValue().getAsString());
             if(matcher.find()) {
                 String blockName = matcher.group(1);
                 Block block = (Block) Block.blockRegistry.getObject(blockName);
@@ -141,7 +137,7 @@ public class RitualStructure {
         }
 
         String activationItem = object.get("activationItem").getAsString();
-        Matcher matcher = itemStackPattern.matcher(activationItem);
+        Matcher matcher = HardcoreRevival.ITEM_STACK_PATTERN.matcher(activationItem);
         if(matcher.find()) {
             Item item = (Item) Item.itemRegistry.getObject(matcher.group(2));
             if(item == null) {
@@ -214,7 +210,7 @@ public class RitualStructure {
                     StructureBlock structureBlock = structureMap[i][j][k];
                     if(structureBlock.block == block && (structureBlock.metadata == -1 || structureBlock.metadata == metadata)) {
                         if(consumeMap[i][j][k]) {
-                            world.setBlockToAir(x + i, y + j, z + k);
+                            world.setBlockToAir(startX + i, startY + j, startZ + k);
                         }
                     }
                 }

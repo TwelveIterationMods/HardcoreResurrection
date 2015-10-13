@@ -13,6 +13,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -27,13 +28,21 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Mod(modid = "HardcoreRevival", name = "Hardcore Revival", acceptableRemoteVersions = "*")
 public class HardcoreRevival {
 
     public static final String HARDCORE_DEATH_BAN_REASON = "Death in Hardcore";
+    public static final Pattern ITEM_STACK_PATTERN = Pattern.compile("(?:([0-9]+)x)?([\\w:]+)(?:@([0-9]+))?");
+    public static final Pattern BLOCK_PATTERN = Pattern.compile("([\\w:]+)(?:@([0-9]+))?");
+
+    public static final Logger logger = LogManager.getLogger();
 
     @Mod.Instance
     public static HardcoreRevival instance;
@@ -42,7 +51,8 @@ public class HardcoreRevival {
     public static CommonProxy proxy;
 
     public static boolean enableHardcoreRevival;
-    public static boolean enableFireworks;
+    public static boolean enableDeathFireworks;
+    public static boolean enableCorpseLocating;
     public static int fireworksInterval;
     public static int healthOnRespawn;
     public static int foodLevelOnRespawn;
@@ -53,6 +63,7 @@ public class HardcoreRevival {
     public static int experienceCost;
     public static String ritualStructureName;
     public static boolean enableSillyThings;
+    public static ItemStack locatorItem;
 
     public static String helpBookText;
     public static RitualStructure ritualStructure;
@@ -64,7 +75,9 @@ public class HardcoreRevival {
         if(!enableHardcoreRevival) {
             return;
         }
-        enableFireworks = config.getBoolean("enableFireworks", "general", true, "Should fireworks be fired from corpses to help other players find them?");
+//        enableFireworks = config.getBoolean("enableFireworks", "general", true, "Should fireworks be fired from corpses to help other players find them?");
+        enableDeathFireworks = config.getBoolean("enableDeathFireworks", "general", false, "Don't even bother setting this to true, clients freeze when fireworks are launched while they're dead (Vanilla bug).");
+        enableDeathFireworks = false;
         fireworksInterval = config.getInt("fireworksInterval", "general", 480, 200, 2400, "The interval at which fireworks are being fired from corpses, in ticks (1 second = 20 ticks)");
         enableSillyThings = config.getBoolean("enableSillyThings", "general", false, "Should silly things be enabled, such as the special revival method for GregTheCart?");
         healthOnRespawn = config.getInt("healthOnRespawn", "general", 10, 1, 20, "How much health should respawned players start with?");
@@ -83,6 +96,21 @@ public class HardcoreRevival {
             effectsOnRitual[i] = new ConfiguredPotionEffect(cfgEffectsOnRitual[i]);
         }
         ritualStructureName = config.getString("ritualStructure", "general", "Goldman", "Which ritual structure should be used? See config/HardcoreRevival - you can name any .json file from that folder (you can also create your own there)");
+        enableCorpseLocating = config.getBoolean("enableCorpseLocating", "general", true, "Should players be able to locate corpses by burning the configured locator item (paper by default) named as the dead player?");
+        String locatorItemName = config.getString("locatorItem", "general", "minecraft:paper", "The item that can be named after a dead player and burned in order to get an indication to where the corpse is located. Format: \"modid:item@metadata\"");
+        Matcher matcher = ITEM_STACK_PATTERN.matcher(locatorItemName);
+        if(matcher.find()) {
+            String itemName = matcher.group(2);
+            String metadata = matcher.group(3);
+            Item item = (Item) Item.itemRegistry.getObject(itemName);
+            if(item != null) {
+                locatorItem = new ItemStack(item, 1, metadata != null ? Integer.parseInt(metadata) : 0);
+            }
+        }
+        if(locatorItem == null) {
+            logger.error("Invalid format for locatorItem property; falling back to paper");
+            locatorItem = new ItemStack(Items.paper);
+        }
         config.save();
 
         File hardcoreRevivalDir = new File(event.getModConfigurationDirectory(), "HardcoreRevival/");
@@ -196,8 +224,8 @@ public class HardcoreRevival {
             if(world.provider.dimensionId != respawnPlayer.dimension) {
                 respawnPlayer.travelToDimension(world.provider.dimensionId);
             }
-            respawnPlayer.playerNetServerHandler.setPlayerLocation(x, y, z, entityPlayer.rotationYaw, entityPlayer.rotationPitch);
             entityPlayer.playerNetServerHandler.playerEntity = respawnPlayer;
+            respawnPlayer.setPositionAndUpdate(x, y, z);
             respawnPlayer.setHealth(HardcoreRevival.healthOnRespawn);
             respawnPlayer.getFoodStats().foodLevel = HardcoreRevival.foodLevelOnRespawn;
             respawnPlayer.getFoodStats().foodSaturationLevel = HardcoreRevival.saturationOnRespawn;

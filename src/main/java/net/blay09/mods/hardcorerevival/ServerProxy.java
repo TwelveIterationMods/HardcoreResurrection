@@ -6,31 +6,24 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.entity.effect.EntityLightningBolt;
+import net.minecraft.entity.item.EntityEnderEye;
 import net.minecraft.entity.item.EntityFireworkRocket;
 import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.item.EntityMinecart;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTUtil;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.management.UserListBans;
-import net.minecraft.server.management.UserListBansEntry;
 import net.minecraft.tileentity.TileEntitySkull;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.DamageSource;
-import net.minecraft.world.World;
 import net.minecraft.world.WorldSettings;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
-import net.minecraftforge.event.entity.item.ItemExpireEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.minecart.MinecartUpdateEvent;
@@ -43,6 +36,7 @@ import java.util.*;
 public class ServerProxy extends CommonProxy {
 
     public static final Map<GameProfile, EntityPlayerMP> deadPlayers = new HashMap<>();
+    public static final List<GraveLocator> graveLocators = new ArrayList<>();
 
     private int tickTimer;
 
@@ -95,20 +89,51 @@ public class ServerProxy extends CommonProxy {
     @SubscribeEvent
     public void onTick(TickEvent.ServerTickEvent event) {
         tickTimer++;
-        Iterator<EntityPlayerMP> it = deadPlayers.values().iterator();
-        while (it.hasNext()) {
-            EntityPlayerMP deadPlayer = it.next();
+        Iterator<EntityPlayerMP> pit = deadPlayers.values().iterator();
+        while (pit.hasNext()) {
+            EntityPlayerMP deadPlayer = pit.next();
             if (deadPlayer.getHealth() > 0f) {
-                it.remove();
+                pit.remove();
                 continue;
             }
             if (deadPlayer.playerNetServerHandler != null && !deadPlayer.playerNetServerHandler.netManager.isChannelOpen()) {
-                it.remove();
+                pit.remove();
                 continue;
             }
-            if (HardcoreRevival.enableFireworks && tickTimer % HardcoreRevival.fireworksInterval == 0) {
+            if (HardcoreRevival.enableDeathFireworks && tickTimer % HardcoreRevival.fireworksInterval == 0) {
                 EntityFireworkRocket entity = new EntityFireworkRocket(deadPlayer.worldObj, deadPlayer.posX, deadPlayer.posY, deadPlayer.posZ, new ItemStack(Items.fireworks));
                 deadPlayer.worldObj.spawnEntityInWorld(entity);
+            }
+        }
+        if(HardcoreRevival.enableCorpseLocating) {
+            Iterator<GraveLocator> git = graveLocators.iterator();
+            while (git.hasNext()) {
+                GraveLocator graveLocator = git.next();
+                if (graveLocator.entityItem.isDead) {
+                    git.remove();
+                    continue;
+                }
+                if (graveLocator.entityItem.isBurning()) {
+                    ItemStack itemStack = graveLocator.entityItem.getEntityItem();
+                    EntityPlayer entityPlayer = MinecraftServer.getServer().getConfigurationManager().func_152612_a(itemStack.getDisplayName());
+                    if (entityPlayer != null) {
+                        if (entityPlayer.getHealth() <= 0) {
+                            EntityEnderEye entityEnderEye = new EntityEnderEye(graveLocator.entityItem.worldObj, graveLocator.entityItem.posX, graveLocator.entityItem.posY, graveLocator.entityItem.posZ);
+                            if (entityPlayer.dimension != entityEnderEye.dimension) {
+                                entityEnderEye.moveTowards(entityPlayer.posX, graveLocator.entityItem.worldObj.getHeight(), entityPlayer.posZ);
+                            } else {
+                                entityEnderEye.moveTowards(entityPlayer.posX, (int) entityPlayer.posY, entityPlayer.posZ);
+                            }
+                            entityEnderEye.shatterOrDrop = false;
+                            graveLocator.entityItem.worldObj.spawnEntityInWorld(entityEnderEye);
+                        } else {
+                            graveLocator.owner.addChatMessage(new ChatComponentText("You can't locate souls that reside in the world of the living, silly."));
+                        }
+                    } else {
+                        graveLocator.owner.addChatMessage(new ChatComponentText("Nothing happens. It appears " + itemStack.getDisplayName() + "'s soul isn't here right now."));
+                    }
+                    git.remove();
+                }
             }
         }
     }
@@ -155,7 +180,6 @@ public class ServerProxy extends CommonProxy {
         }
         if(event.entityPlayer.getHealth() < HardcoreRevival.damageOnRitual) {
             event.entityPlayer.addChatMessage(new ChatComponentText("Well, that was dumb."));
-            return;
         }
         HardcoreRevival.ritualStructure.consumeStructure(event.world, event.x, event.y, event.z);
         HardcoreRevival.ritualStructure.consumeActivationItem(heldItem);
@@ -190,4 +214,13 @@ public class ServerProxy extends CommonProxy {
         deadPlayers.remove(event.player.getGameProfile());
     }
 
+    @SubscribeEvent
+    public void onItemToss(ItemTossEvent event) {
+        if(HardcoreRevival.enableCorpseLocating) {
+            ItemStack itemStack = event.entityItem.getEntityItem();
+            if (itemStack.isItemEqual(HardcoreRevival.locatorItem) && itemStack.hasDisplayName()) {
+                graveLocators.add(new GraveLocator(event.player, event.entityItem));
+            }
+        }
+    }
 }
