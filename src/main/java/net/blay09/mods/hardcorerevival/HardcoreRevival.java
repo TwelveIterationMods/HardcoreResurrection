@@ -182,6 +182,7 @@ public class HardcoreRevival {
         String bookText = HardcoreRevival.helpBookText;
         bookText = bookText.replace("<DeadPerson>", deadPerson);
         bookText = bookText.replace("<ActivationItem>", ritualStructure.getActivationItemHelpText());
+        bookText = bookText.replace("<LocatorItem>", locatorItem.getDisplayName());
         StringBuilder ritualNotes = new StringBuilder();
         if(experienceCost > 0) {
             ritualNotes.append("- Requires ").append(experienceCost).append(" experience levels\n");
@@ -270,6 +271,13 @@ public class HardcoreRevival {
     }
 
     public static void spawnPlayerGrave(World world, int x, int y, int z, EntityPlayer entityPlayer) {
+        // Prevent horrible void disasters
+        if(y < 2) {
+            y = world.getTopSolidOrLiquidBlock(x, z);
+            if(y < 2) {
+                y = 8;
+            }
+        }
         Block corpseBlock = world.getBlock(x, y, z);
         if(world.isAirBlock(x, y, z) || corpseBlock == Blocks.red_flower || corpseBlock == Blocks.yellow_flower || corpseBlock == Blocks.grass || corpseBlock == Blocks.tallgrass) {
             world.setBlock(x, y, z, Blocks.red_flower, 4, 2);

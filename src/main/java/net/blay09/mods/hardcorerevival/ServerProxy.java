@@ -41,10 +41,14 @@ public class ServerProxy extends CommonProxy {
     private int tickTimer;
 
     public void init(FMLInitializationEvent event) {
-        if (HardcoreRevival.enableHardcoreRevival) {
-            FMLCommonHandler.instance().bus().register(this);
-            MinecraftForge.EVENT_BUS.register(this);
+        if (!HardcoreRevival.enableHardcoreRevival) {
+            return;
         }
+        FMLCommonHandler.instance().bus().register(this);
+        MinecraftForge.EVENT_BUS.register(this);
+
+        // Prevent skulls from exploding
+        Blocks.skull.setResistance(2000f);
     }
 
     @SubscribeEvent

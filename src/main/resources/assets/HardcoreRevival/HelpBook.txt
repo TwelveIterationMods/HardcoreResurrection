@@ -6,9 +6,16 @@ You have received this book because you're probably mourning the loss of your de
 However, not all hope is lost just yet! Read the following pages to learn why.<PageBreak>
 
 While this world is pretty hardcore, someone felt merciful enough to let you revive your friends using a special ritual.
+It might be a little costly and just a tad dangerous, but it's absolutely worth it.<PageBreak>
 
-Make sure to keep onto the head you just picked up.
-SERIOUSLY. Lose it, and your friend is gone forever.<PageBreak>
+Locating Corpses
+---------------
+
+In order to perform the revival ritual, you first of all need the head of the player who died.
+The head can be found below the ground at their death location, usually marked by a red tulip.
+
+If you don't know where your friend died, use an anvil to name <LocatorItem> after them and then burn that item.
+A magical orb will fly off into the general direction of the corpse. Repeat this until you found it.<PageBreak>
 
 Ritual Notes
 ----------
