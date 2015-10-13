@@ -85,47 +85,10 @@ public class ServerProxy extends CommonProxy {
 
     @SubscribeEvent
     public void onPlayerDeath(LivingDeathEvent event) {
-        if (event.entity instanceof EntityPlayer) {
-            deadPlayers.put(((EntityPlayer) event.entity).getGameProfile(), (EntityPlayerMP) event.entity);
-            final World world = event.entity.worldObj;
-            int x = (int) event.entity.posX;
-            int y = (int) event.entity.posY;
-            int z = (int) event.entity.posZ;
-            boolean foundSpot = world.isAirBlock(x, y, z);
-            final int range = 5;
-            if(!foundSpot) {
-                for (int yOff = -range; yOff <= range; yOff++) {
-                    for (int zOff = -range; zOff <= range; zOff++) {
-                        for (int xOff = -range; xOff <= range; xOff++) {
-                            if (world.isAirBlock(x + xOff, y + yOff, z + zOff)) {
-                                foundSpot = true;
-                                x = x + xOff;
-                                y = y + yOff;
-                                z = z + zOff;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            if(!foundSpot) {
-                for (int yOff = -range; yOff <= range; yOff++) {
-                    for (int zOff = -range; zOff <= range; zOff++) {
-                        for (int xOff = -range; xOff <= range; xOff++) {
-                            if (world.getTileEntity(x + xOff, y + yOff, z + zOff) == null) {
-                                x = x + xOff;
-                                y = y + yOff;
-                                z = z + zOff;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            world.setBlock(x, y, z, Blocks.skull, 1, 2);
-            TileEntitySkull skull = (TileEntitySkull) world.getTileEntity(x, y, z);
-            skull.func_152106_a(((EntityPlayer) event.entity).getGameProfile());
-            event.entity.worldObj.markBlockForUpdate(x, y, z);
+        if (event.entity instanceof EntityPlayerMP) {
+            EntityPlayerMP entityPlayer = (EntityPlayerMP) event.entity;
+            deadPlayers.put(entityPlayer.getGameProfile(), entityPlayer);
+            HardcoreRevival.spawnPlayerGrave(event.entity.worldObj, (int) event.entity.posX, (int) event.entity.posY, (int) event.entity.posZ, entityPlayer);
         }
     }
 

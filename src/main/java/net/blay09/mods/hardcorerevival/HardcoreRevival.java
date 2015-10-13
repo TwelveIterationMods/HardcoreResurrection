@@ -8,17 +8,21 @@ import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
+import net.minecraft.nbt.NBTUtil;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.UserListBans;
 import net.minecraft.server.management.UserListBansEntry;
+import net.minecraft.tileentity.TileEntitySkull;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 import org.apache.commons.io.FileUtils;
@@ -136,6 +140,8 @@ public class HardcoreRevival {
         event.registerServerCommand(new CommandHardcoreRevival());
     }
 
+
+
     public static ItemStack getHelpBook(String deadPerson) {
         ItemStack itemStack = new ItemStack(Items.written_book);
         NBTTagCompound tagCompound = new NBTTagCompound();
@@ -225,4 +231,45 @@ public class HardcoreRevival {
     }
 
 
+    public static ItemStack getPlayerHead(EntityPlayer entityPlayer) {
+        ItemStack itemStack = new ItemStack(Items.skull, 1, 3);
+        NBTTagCompound tagCompound = new NBTTagCompound();
+        NBTTagCompound ownerCompound = new NBTTagCompound();
+        NBTUtil.func_152460_a(ownerCompound, entityPlayer.getGameProfile());
+        tagCompound.setTag("SkullOwner", ownerCompound);
+        itemStack.setTagCompound(tagCompound);
+        return itemStack;
+    }
+
+    public static void spawnPlayerGrave(World world, int x, int y, int z, EntityPlayer entityPlayer) {
+        Block corpseBlock = world.getBlock(x, y, z);
+        if(world.isAirBlock(x, y, z) || corpseBlock == Blocks.red_flower || corpseBlock == Blocks.yellow_flower || corpseBlock == Blocks.grass || corpseBlock == Blocks.tallgrass) {
+            world.setBlock(x, y, z, Blocks.red_flower, 4, 2);
+        }
+        Block groundBlock = world.getBlock(x, y - 1, z);
+        if(world.isAirBlock(x, y - 1, z) || groundBlock == Blocks.cobblestone || groundBlock == Blocks.stone || groundBlock == Blocks.grass) {
+            world.setBlock(x, y - 1, z, Blocks.dirt);
+        }
+        for(int yOff = 2; y - yOff > 0; yOff++) {
+            Block headBlock = world.getBlock(x, y - yOff, z);
+            if(world.isAirBlock(x, y - yOff, z) || headBlock == Blocks.cobblestone || headBlock == Blocks.stone || groundBlock == Blocks.dirt || groundBlock == Blocks.grass || groundBlock == Blocks.gravel) {
+                spawnPlayerHead(world, x, y - yOff, z, entityPlayer);
+                return;
+            }
+        }
+        // For some reason, there was no valid block in the whole area; let's be less merciful and replace anything but tile entities
+        for(int yOff = 2; y - yOff > 0; yOff++) {
+            if(world.getTileEntity(x, y - yOff, z) == null) {
+                spawnPlayerHead(world, x, y - yOff, z, entityPlayer);
+                return;
+            }
+        }
+    }
+
+    public static void spawnPlayerHead(World world, int x, int y, int z, EntityPlayer entityPlayer) {
+        world.setBlock(x, y, z, Blocks.skull, 1, 2);
+        TileEntitySkull skull = (TileEntitySkull) world.getTileEntity(x, y, z);
+        skull.func_152106_a(entityPlayer.getGameProfile());
+        world.markBlockForUpdate(x, y, z);
+    }
 }
