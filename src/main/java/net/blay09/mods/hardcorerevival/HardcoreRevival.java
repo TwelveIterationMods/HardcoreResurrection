@@ -65,6 +65,7 @@ public class HardcoreRevival {
     public static String ritualStructureName;
     public static boolean enableSillyThings;
     public static ItemStack locatorItem;
+    public static boolean disallowFakePlayers;
 
     public static String helpBookText;
     public static RitualStructure ritualStructure;
@@ -108,6 +109,7 @@ public class HardcoreRevival {
         }
         ritualStructureName = config.getString("ritualStructure", "general", "Goldman", "Which ritual structure should be used? See config/HardcoreRevival - you can name any .json file from that folder (you can also create your own there)");
         enableCorpseLocating = config.getBoolean("enableCorpseLocating", "general", true, "Should players be able to locate corpses by burning the configured locator item (paper by default) named as the dead player?");
+        disallowFakePlayers = config.getBoolean("disallowFakePlayers", "general", true, "Should fake players be disallowed from performing the ritual?");
         String locatorItemName = config.getString("locatorItem", "general", "minecraft:paper", "The item that can be named after a dead player and burned in order to get an indication to where the corpse is located. Format: \"modid:item@metadata\"");
         Matcher matcher = ITEM_STACK_PATTERN.matcher(locatorItemName);
         if(matcher.find()) {

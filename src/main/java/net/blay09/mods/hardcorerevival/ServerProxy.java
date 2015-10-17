@@ -23,6 +23,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.world.WorldSettings;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.minecart.MinecartUpdateEvent;
@@ -141,6 +142,9 @@ public class ServerProxy extends CommonProxy {
 
     @SubscribeEvent
     public void onPlayerInteract(PlayerInteractEvent event) {
+        if(event.entityPlayer instanceof FakePlayer && HardcoreRevival.disallowFakePlayers) {
+            return;
+        }
         if(HardcoreRevival.ritualStructure == null) {
             return;
         }
