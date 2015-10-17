@@ -9,7 +9,6 @@ import cpw.mods.fml.common.gameevent.TickEvent;
 import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.entity.item.EntityEnderEye;
 import net.minecraft.entity.item.EntityFireworkRocket;
-import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
@@ -28,7 +27,6 @@ import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.minecart.MinecartUpdateEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.world.BlockEvent;
 
 import java.util.*;
 
@@ -55,6 +53,9 @@ public class ServerProxy extends CommonProxy {
     public void onPlayerJoined(PlayerEvent.PlayerLoggedInEvent event) {
         if(event.player.getHealth() <= 0) {
             deadPlayers.put(event.player.getGameProfile(), (EntityPlayerMP) event.player);
+        }
+        if(HardcoreRevival.ritualStructureError != null) {
+            event.player.addChatMessage(new ChatComponentText("\u00a7c" + HardcoreRevival.ritualStructureError.getMessage()));
         }
     }
 
@@ -140,6 +141,9 @@ public class ServerProxy extends CommonProxy {
 
     @SubscribeEvent
     public void onPlayerInteract(PlayerInteractEvent event) {
+        if(HardcoreRevival.ritualStructure == null) {
+            return;
+        }
         if (event.action != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
             return;
         }

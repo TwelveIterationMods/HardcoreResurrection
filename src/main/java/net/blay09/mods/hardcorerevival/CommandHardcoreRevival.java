@@ -7,6 +7,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.ChatComponentText;
 
 import java.util.List;
 
@@ -61,6 +62,13 @@ public class CommandHardcoreRevival extends CommandBase {
                 throw new WrongUsageException(getCommandUsage(sender));
             }
             HardcoreRevival.spawnPlayerGrave(sender.getEntityWorld(), sender.getPlayerCoordinates().posX, sender.getPlayerCoordinates().posY, sender.getPlayerCoordinates().posZ, targetPlayer);
+        } else if (cmd.equals("reload")) {
+            HardcoreRevival.instance.loadConfig();
+            if(HardcoreRevival.ritualStructureError != null) {
+                sender.addChatMessage(new ChatComponentText("\u00a7c" + HardcoreRevival.ritualStructureError.getMessage()));
+            } else {
+                sender.addChatMessage(new ChatComponentText("Hardcore Revival configuration successfully reloaded."));
+            }
         } else {
             throw new WrongUsageException(getCommandUsage(sender));
         }

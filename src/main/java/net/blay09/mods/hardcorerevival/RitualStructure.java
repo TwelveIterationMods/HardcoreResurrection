@@ -20,6 +20,12 @@ import java.util.regex.Matcher;
 
 public class RitualStructure {
 
+    public static class RitualException extends RuntimeException {
+        public RitualException(String message) {
+            super(message);
+        }
+    }
+
     public String getActivationItemHelpText() {
         return activationItemHelpText;
     }
@@ -54,26 +60,26 @@ public class RitualStructure {
         blockMapping.put('H', new StructureBlock(Blocks.skull, -1));
         for(Map.Entry<String, JsonElement> entry : mapping.entrySet()) {
             if(entry.getKey().length() != 1) {
-                throw new RuntimeException("Configured hardcore revival ritual activation structure is invalid: mapping keys need to be one character long");
+                throw new RitualException("Configured hardcore revival ritual activation structure is invalid: mapping keys need to be one character long");
             }
             char c = Character.toUpperCase(entry.getKey().charAt(0));
             if(c == 'H') {
-                throw new RuntimeException("Configured hardcore revival ritual activation structure is invalid: mapping 'H' is reserved for the player head");
+                throw new RitualException("Configured hardcore revival ritual activation structure is invalid: mapping 'H' is reserved for the player head");
             }
             if(blockMapping.containsKey(c)) {
-                throw new RuntimeException("Configured hardcore revival ritual activation structure is invalid: mapping '" + entry.getKey() + "' is alerady defined");
+                throw new RitualException("Configured hardcore revival ritual activation structure is invalid: mapping '" + entry.getKey() + "' is alerady defined");
             }
             Matcher matcher = HardcoreRevival.BLOCK_PATTERN.matcher(entry.getValue().getAsString());
             if(matcher.find()) {
                 String blockName = matcher.group(1);
                 Block block = (Block) Block.blockRegistry.getObject(blockName);
                 if(block == null) {
-                    throw new RuntimeException("Configured hardcore revival ritual activation structure is invalid: block " + blockName + " can not be found");
+                    throw new RitualException("Configured hardcore revival ritual activation structure is invalid: block " + blockName + " can not be found");
                 }
                 String metadata = matcher.group(2);
                 blockMapping.put(c, new StructureBlock(block, metadata != null ? Integer.parseInt(matcher.group(2)) : 0));
             } else {
-                throw new RuntimeException("Configured hardcore revival ritual mappings are invalid: incorrect block format for " + entry.getValue().getAsString());
+                throw new RitualException("Configured hardcore revival ritual mappings are invalid: incorrect block format for " + entry.getValue().getAsString());
             }
         }
         boolean structureContainsHead = false;
@@ -88,13 +94,13 @@ public class RitualStructure {
                         structureMap = new StructureBlock[structureX.length()][structureY.size()][structureZ.size()];
                     } else {
                         if(structureMap.length != structureX.length() || structureMap[x].length != structureY.size()) {
-                            throw new RuntimeException("Configured hardcore revival ritual structure is invalid: structure layers are of different sizes");
+                            throw new RitualException("Configured hardcore revival ritual structure is invalid: structure layers are of different sizes");
                         }
                     }
                     char c = Character.toUpperCase(structureX.charAt(x));
                     if(c == 'H') {
                         if(structureContainsHead) {
-                            throw new RuntimeException("Configured hardcore revival ritual structure is invalid: only one player head in the ritual allowed");
+                            throw new RitualException("Configured hardcore revival ritual structure is invalid: only one player head in the ritual allowed");
                         }
                         headX = x;
                         headY = structureHeight - y - 1;
@@ -103,18 +109,18 @@ public class RitualStructure {
                     }
                     StructureBlock block = blockMapping.get(c);
                     if(block == null) {
-                        throw new RuntimeException("Configured hardcore revival ritual structure is invalid: mapping '" + c + "' is not defined");
+                        throw new RitualException("Configured hardcore revival ritual structure is invalid: mapping '" + c + "' is not defined");
                     }
                     structureMap[x][structureHeight - y - 1][z] = block;
                 }
             }
         }
         if(!structureContainsHead) {
-            throw new RuntimeException("Configured hardcore revival ritual structure is invalid: no player head in structure (mapping H)");
+            throw new RitualException("Configured hardcore revival ritual structure is invalid: no player head in structure (mapping H)");
         }
         JsonArray consumeStructureY = object.getAsJsonArray("consumeStructure");
         if(structureY.size() != consumeStructureY.size()) {
-            throw new RuntimeException("Configured hardcore revival ritual structure is invalid: structure and consumeStructure are of different sizes");
+            throw new RitualException("Configured hardcore revival ritual structure is invalid: structure and consumeStructure are of different sizes");
         }
         for(int y = 0; y < consumeStructureY.size(); y++) {
             JsonArray consumeStructureZ = consumeStructureY.get(y).getAsJsonArray();
@@ -125,12 +131,12 @@ public class RitualStructure {
                         consumeMap = new boolean[consumeStructureX.length()][consumeStructureY.size()][consumeStructureZ.size()];
                     } else {
                         if(consumeMap.length != consumeStructureX.length() || consumeMap[x].length != consumeStructureY.size()) {
-                            throw new RuntimeException("Configured hardcore revival ritual structure is invalid: structure layers are of different sizes");
+                            throw new RitualException("Configured hardcore revival ritual structure is invalid: structure layers are of different sizes");
                         }
                     }
                     consumeMap[x][structureHeight - y - 1][z] = consumeStructureX.charAt(x) == '1';
-                    if(x == headX && y == headY && z == headZ && !consumeMap[x][structureHeight - y - 1][z]) {
-                        throw new RuntimeException("Configured hardcore revival ritual structure is invalid: head always needs to be consumed");
+                    if(x == headX && structureHeight - y - 1 == headY && z == headZ && !consumeMap[x][structureHeight - y - 1][z]) {
+                        throw new RitualException("Configured hardcore revival ritual structure is invalid: head always needs to be consumed");
                     }
                 }
             }
@@ -141,13 +147,13 @@ public class RitualStructure {
         if(matcher.find()) {
             Item item = (Item) Item.itemRegistry.getObject(matcher.group(2));
             if(item == null) {
-                throw new RuntimeException("Configured hardcore revival ritual activation item is invalid: item " + matcher.group(2) + " can not be found");
+                throw new RitualException("Configured hardcore revival ritual activation item is invalid: item " + matcher.group(2) + " can not be found");
             }
             String stackSize = matcher.group(1);
             String metadata = matcher.group(3);
             activationItemStack = new ItemStack(item, stackSize != null ? Integer.parseInt(stackSize) : 1, metadata != null ? Integer.parseInt(metadata) : 0);
         } else {
-            throw new RuntimeException("Configured hardcore revival ritual activation item is invalid: incorrect format");
+            throw new RitualException("Configured hardcore revival ritual activation item is invalid: incorrect format");
         }
         if(object.has("activationItemNBT")) {
             try {
@@ -157,7 +163,7 @@ public class RitualStructure {
                     activationItemStack.setTagCompound((NBTTagCompound) tagCompound);
                 }
             } catch (NBTException e) {
-                throw new RuntimeException("Configured hardcore revival ritual activation item is invalid: incorrect nbt data format");
+                throw new RitualException("Configured hardcore revival ritual activation item is invalid: incorrect nbt data format");
             }
         }
         consumeActivationItem = !object.has("consumeActivationItem") || object.get(" consumeActivationItem").getAsBoolean();

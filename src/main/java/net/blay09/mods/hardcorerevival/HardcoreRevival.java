@@ -26,13 +26,11 @@ import net.minecraft.server.management.UserListBansEntry;
 import net.minecraft.tileentity.TileEntitySkull;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.config.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import scala.collection.parallel.ParIterableLike;
 
 import java.io.*;
 import java.util.regex.Matcher;
@@ -42,8 +40,8 @@ import java.util.regex.Pattern;
 public class HardcoreRevival {
 
     public static final String HARDCORE_DEATH_BAN_REASON = "Death in Hardcore";
-    public static final Pattern ITEM_STACK_PATTERN = Pattern.compile("(?:([0-9]+)x)?([\\w:]+)(?:@([0-9]+))?");
-    public static final Pattern BLOCK_PATTERN = Pattern.compile("([\\w:]+)(?:@([0-9]+))?");
+    public static final Pattern ITEM_STACK_PATTERN = Pattern.compile("(?:([0-9]+)x)?([\\w:]+)(?:[@:]([0-9]+))?");
+    public static final Pattern BLOCK_PATTERN = Pattern.compile("([\\w:]+)(?:[@:]([0-9]+))?");
 
     public static final Logger logger = LogManager.getLogger();
 
@@ -70,10 +68,20 @@ public class HardcoreRevival {
 
     public static String helpBookText;
     public static RitualStructure ritualStructure;
+    public static RitualStructure.RitualException ritualStructureError;
+
+    private File configDir;
+    private File configFile;
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
-        Configuration config = new Configuration(event.getSuggestedConfigurationFile());
+        configDir = event.getModConfigurationDirectory();
+        configFile = event.getSuggestedConfigurationFile();
+        loadConfig();
+    }
+
+    public void loadConfig() {
+        Configuration config = new Configuration(configFile);
         enableHardcoreRevival = config.getBoolean("enableHardcoreRevival", "general", true, "A convenience option to disable the entirety of the mod, for example as a default in modpacks.");
         if(!enableHardcoreRevival) {
             return;
@@ -116,8 +124,9 @@ public class HardcoreRevival {
         }
         config.save();
 
-        File hardcoreRevivalDir = new File(event.getModConfigurationDirectory(), "HardcoreRevival/");
+        File hardcoreRevivalDir = new File(configDir, "HardcoreRevival/");
         if(hardcoreRevivalDir.exists() || hardcoreRevivalDir.mkdirs()) {
+            // Load the help book
             File helpBookFile = new File(hardcoreRevivalDir, "HardcoreRevival-HelpBook.txt");
             if (helpBookFile.exists()) {
                 try {
@@ -133,13 +142,23 @@ public class HardcoreRevival {
                     e.printStackTrace();
                 }
             }
+
+            // Extract default rituals
             extractStructure(hardcoreRevivalDir, "Goldman");
+
+            // Load the ritual
+            ritualStructureError = null;
             Gson gson = new Gson();
             try {
                 JsonObject object = gson.fromJson(new FileReader(new File(hardcoreRevivalDir, ritualStructureName + ".json")), JsonObject.class);
                 ritualStructure = new RitualStructure(object);
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                ritualStructureError = new RitualStructure.RitualException("The ritual file " + ritualStructureName + " could not be found");
+            } catch (RitualStructure.RitualException e) {
+                ritualStructureError = e;
+            }
+            if(ritualStructureError != null) {
+                logger.error(ritualStructureError.getMessage());
             }
         }
         if(helpBookText == null) {
@@ -179,7 +198,9 @@ public class HardcoreRevival {
         NBTTagList pages = new NBTTagList();
         String bookText = HardcoreRevival.helpBookText;
         bookText = bookText.replace("<DeadPerson>", deadPerson);
-        bookText = bookText.replace("<ActivationItem>", ritualStructure.getActivationItemHelpText());
+        if(ritualStructure != null) {
+            bookText = bookText.replace("<ActivationItem>", ritualStructure.getActivationItemHelpText());
+        }
         bookText = bookText.replace("<LocatorItem>", locatorItem.getDisplayName());
         StringBuilder ritualNotes = new StringBuilder();
         if(experienceCost > 0) {
@@ -196,20 +217,22 @@ public class HardcoreRevival {
         }
         bookText = bookText.replace("<RitualNotes>", ritualNotes.toString());
         String[] pageTexts = bookText.split("<PageBreak>");
-        String[] structureHelpText = ritualStructure.getStructureHelpText();
-        for (String pageText : pageTexts) {
-            if(structureHelpText.length > 0) {
-                int foundStructure = pageText.indexOf("<Structure>");
-                if(foundStructure != -1) {
-                    pageText = pageText.replace("<Structure>", structureHelpText[0]);
-                    pages.appendTag(new NBTTagString(pageText));
-                    for(int i = 1; i < structureHelpText.length; i++) {
-                        pages.appendTag(new NBTTagString(structureHelpText[i]));
+        if(ritualStructure != null) {
+            String[] structureHelpText = ritualStructure.getStructureHelpText();
+            for (String pageText : pageTexts) {
+                if (structureHelpText.length > 0) {
+                    int foundStructure = pageText.indexOf("<Structure>");
+                    if (foundStructure != -1) {
+                        pageText = pageText.replace("<Structure>", structureHelpText[0]);
+                        pages.appendTag(new NBTTagString(pageText));
+                        for (int i = 1; i < structureHelpText.length; i++) {
+                            pages.appendTag(new NBTTagString(structureHelpText[i]));
+                        }
+                        continue;
                     }
-                    continue;
                 }
+                pages.appendTag(new NBTTagString(pageText));
             }
-            pages.appendTag(new NBTTagString(pageText));
         }
         tagCompound.setTag("pages", pages);
         itemStack.setTagCompound(tagCompound);
