@@ -292,35 +292,41 @@ public class HardcoreRevival {
     }
 
     public static void spawnPlayerGrave(World world, int x, int y, int z, EntityPlayer entityPlayer) {
-        // Prevent horrible void disasters
-        if(y < 2) {
-            y = world.getTopSolidOrLiquidBlock(x, z);
-            if(y < 2) {
-                y = 8;
-            }
-        }
-        Block corpseBlock = world.getBlock(x, y, z);
-        if(world.isAirBlock(x, y, z) || corpseBlock == Blocks.red_flower || corpseBlock == Blocks.yellow_flower || corpseBlock == Blocks.grass || corpseBlock == Blocks.tallgrass) {
-            world.setBlock(x, y, z, Blocks.red_flower, 4, 2);
-        }
-        Block groundBlock = world.getBlock(x, y - 1, z);
-        if(world.isAirBlock(x, y - 1, z) || groundBlock == Blocks.cobblestone || groundBlock == Blocks.stone || groundBlock == Blocks.grass) {
-            world.setBlock(x, y - 1, z, Blocks.dirt);
-        }
-        for(int yOff = 2; y - yOff > 0; yOff++) {
-            Block headBlock = world.getBlock(x, y - yOff, z);
-            if(world.isAirBlock(x, y - yOff, z) || headBlock == Blocks.cobblestone || headBlock == Blocks.stone || groundBlock == Blocks.dirt || groundBlock == Blocks.grass || groundBlock == Blocks.gravel) {
+        for(int yOff = 2; y - yOff > 5; yOff++) {
+            if(isValidGraveBlock(world, x, y - yOff, z)) {
+                if(isValidGraveFlowerBlock(world, x, y - yOff + 2, z)) {
+                    world.setBlock(x, y, z, Blocks.red_flower, 4, 2);
+                }
+                if(isValidGraveBlock(world, x, y - yOff + 1, z)) {
+                    world.setBlock(x, y - 1, z, Blocks.dirt);
+                }
                 spawnPlayerHead(world, x, y - yOff, z, entityPlayer);
                 return;
             }
         }
         // For some reason, there was no valid block in the whole area; let's be less merciful and replace anything but tile entities
-        for(int yOff = 2; y - yOff > 0; yOff++) {
+        for(int yOff = 2; y - yOff > 5; yOff++) {
             if(world.getTileEntity(x, y - yOff, z) == null) {
+                if(isValidGraveFlowerBlock(world, x, y - yOff + 2, z)) {
+                    world.setBlock(x, y, z, Blocks.red_flower, 4, 2);
+                }
+                if(isValidGraveBlock(world, x, y - yOff + 1, z)) {
+                    world.setBlock(x, y - 1, z, Blocks.dirt);
+                }
                 spawnPlayerHead(world, x, y - yOff, z, entityPlayer);
                 return;
             }
         }
+    }
+
+    private static boolean isValidGraveBlock(World world, int x, int y, int z) {
+        Block block = world.getBlock(x, y, z);
+        return (block.isAir(world, x, y, z) || block == Blocks.cobblestone || block == Blocks.stone || block == Blocks.dirt || block == Blocks.grass || block == Blocks.gravel);
+    }
+
+    private static boolean isValidGraveFlowerBlock(World world, int x, int y, int z) {
+        Block block = world.getBlock(x, y, z);
+        return (block.isAir(world, x, y, z) || block == Blocks.red_flower || block == Blocks.yellow_flower || block == Blocks.grass || block == Blocks.tallgrass);
     }
 
     public static void spawnPlayerHead(World world, int x, int y, int z, EntityPlayer entityPlayer) {
