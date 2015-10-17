@@ -318,6 +318,9 @@ public class HardcoreRevival {
             }
         }
         // Screw it
+        Block block = world.getBlock(x, y, z);
+        int metadata = world.getBlockMetadata(x, y, z);
+        block.breakBlock(world, x, y, z, block, metadata);
         spawnPlayerHead(world, x, y, z, entityPlayer);
     }
 
