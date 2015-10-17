@@ -317,6 +317,8 @@ public class HardcoreRevival {
                 return;
             }
         }
+        // Screw it
+        spawnPlayerHead(world, x, y, z, entityPlayer);
     }
 
     private static boolean isValidGraveBlock(World world, int x, int y, int z) {
