@@ -6,6 +6,7 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
+import net.minecraft.block.material.Material;
 import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.entity.item.EntityEnderEye;
 import net.minecraft.entity.item.EntityFireworkRocket;
@@ -48,6 +49,7 @@ public class ServerProxy extends CommonProxy {
 
         // Prevent skulls from exploding
         Blocks.skull.setResistance(2000f);
+        Blocks.skull.blockMaterial = Material.clay;
     }
 
     @SubscribeEvent

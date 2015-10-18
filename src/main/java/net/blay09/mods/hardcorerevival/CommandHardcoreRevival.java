@@ -20,7 +20,7 @@ public class CommandHardcoreRevival extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/hardcorerevival (givehead|givebook|spawngrave|revive) [...]";
+        return "/hardcorerevival (givehead|givebook|spawngrave|revive|reload) [...]";
     }
 
     @Override
@@ -82,7 +82,7 @@ public class CommandHardcoreRevival extends CommandBase {
     @Override
     public List addTabCompletionOptions(ICommandSender sender, String[] args) {
         if (args.length == 1) {
-            return getListOfStringsMatchingLastWord(args, "givebook", "givehead", "revive", "spawngrave");
+            return getListOfStringsMatchingLastWord(args, "givebook", "givehead", "revive", "spawngrave", "reload");
         } else if(args.length == 2) {
             return getListOfStringsMatchingLastWord(args, MinecraftServer.getServer().getAllUsernames());
         }
