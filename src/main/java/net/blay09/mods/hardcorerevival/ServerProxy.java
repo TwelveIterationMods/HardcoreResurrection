@@ -6,6 +6,8 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
+import cpw.mods.fml.common.registry.GameRegistry;
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.entity.item.EntityEnderEye;
@@ -147,20 +149,38 @@ public class ServerProxy extends CommonProxy {
         if(event.entityPlayer instanceof FakePlayer && HardcoreRevival.disallowFakePlayers) {
             return;
         }
+        ItemStack heldItem = event.entityPlayer.getHeldItem();
+        boolean isDebugging = heldItem != null && heldItem.getItem() == Items.stick && heldItem.hasTagCompound() && heldItem.getTagCompound().hasKey("HardcoreRevivalDebugger");
         if(HardcoreRevival.ritualStructure == null) {
+            if(isDebugging) {
+                event.entityPlayer.addChatMessage(new ChatComponentText("The currently loaded ritual structure is invalid."));
+            }
             return;
         }
         if (event.action != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
             return;
         }
-        if (event.world.getBlock(event.x, event.y, event.z) != Blocks.skull) {
+        Block block = event.world.getBlock(event.x, event.y, event.z);
+        if (block != Blocks.skull) {
+            if(isDebugging) {
+                GameRegistry.UniqueIdentifier identifier = GameRegistry.findUniqueIdentifierFor(block);
+                StringBuilder sb = new StringBuilder();
+                if(identifier != null) {
+                    sb.append(identifier.modId).append(":").append(identifier.name);
+                } else {
+                    sb.append(block.getUnlocalizedName());
+                }
+                sb.append(":").append(event.world.getBlockMetadata(event.x, event.y, event.z));
+                sb.append(" at ").append(event.x).append(", ").append(event.y).append(", ").append(event.z);
+                event.entityPlayer.addChatMessage(new ChatComponentText(sb.toString()));
+            }
             return;
         }
         TileEntitySkull skull = (TileEntitySkull) event.world.getTileEntity(event.x, event.y, event.z);
-        if (skull.func_152108_a() == null) {
+        if (!isDebugging && skull.func_152108_a() == null) {
+            event.entityPlayer.addChatMessage(new ChatComponentText("This head is not one of a dead soul."));
             return;
         }
-        ItemStack heldItem = event.entityPlayer.getHeldItem();
         if(event.entityPlayer.isSneaking() && heldItem == null) {
             if(!ForgeHooks.onBlockBreakEvent(event.world, WorldSettings.GameType.SURVIVAL, (EntityPlayerMP) event.entityPlayer, event.x, event.y, event.z).isCanceled()) {
                 List<ItemStack> list = Blocks.skull.getDrops(event.world, event.x, event.y, event.z, event.world.getBlockMetadata(event.x, event.y, event.z), 0);
@@ -173,11 +193,17 @@ public class ServerProxy extends CommonProxy {
             }
             return;
         }
-        if (!HardcoreRevival.ritualStructure.checkActivationItem(heldItem)) {
+        if (!isDebugging && !HardcoreRevival.ritualStructure.checkActivationItem(heldItem)) {
             return;
         }
-        if (!HardcoreRevival.ritualStructure.checkStructure(event.world, event.x, event.y, event.z)) {
-            event.entityPlayer.addChatMessage(new ChatComponentText("Nothing happens. It appears the ritual structure is not complete."));
+        if (!HardcoreRevival.ritualStructure.checkStructure(event.entityPlayer, event.world, event.x, event.y, event.z, isDebugging)) {
+            if(!isDebugging) {
+                event.entityPlayer.addChatMessage(new ChatComponentText("Nothing happens. It appears the ritual structure is not complete."));
+            }
+            return;
+        }
+        if(isDebugging) {
+            event.entityPlayer.addChatMessage(new ChatComponentText("Success! Ritual structure is valid."));
             return;
         }
         if (event.entityPlayer.experienceLevel < HardcoreRevival.experienceCost) {

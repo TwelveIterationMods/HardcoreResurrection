@@ -93,7 +93,7 @@ public class HardcoreRevival {
         fireworksInterval = config.getInt("fireworksInterval", "general", 480, 200, 2400, "The interval at which fireworks are being fired from corpses, in ticks (1 second = 20 ticks)");
         enableSillyThings = config.getBoolean("enableSillyThings", "general", false, "Should silly things be enabled, such as the special revival method for GregTheCart?");
         healthOnRespawn = config.getInt("healthOnRespawn", "general", 10, 1, 20, "How much health should respawned players start with?");
-        foodLevelOnRespawn = config.getInt("foodLevelOnRespawn", "general", 0, 0, 20, "How much food points should respawned players start with?");
+        foodLevelOnRespawn = config.getInt("foodLevelOnRespawn", "general", 1, 0, 20, "How much food points should respawned players start with?");
         saturationOnRespawn = config.getInt("saturationOnRespawn", "general", 0, 0, 20, "How much saturation should respawned players start with?");
         experienceCost = config.getInt("experienceCost", "general", 5, 0, 100, "How much experience levels should reviving players cost?");
         String[] cfgEffectsOnRespawn = config.getStringList("effectsOnRespawn", "general", new String[] { "600xpotion.blindness", "1200xpotion.weakness@2" }, "What potion effects should be applied to respawned players? Format: <TimeInTicks>x<PotionNameOrID>@<PotionLevel>");

@@ -3,7 +3,9 @@ package net.blay09.mods.hardcorerevival;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -11,6 +13,7 @@ import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTException;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
 
@@ -185,7 +188,7 @@ public class RitualStructure {
         }
     }
 
-    public boolean checkStructure(World world, int x, int y, int z) {
+    public boolean checkStructure(EntityPlayer entityPlayer, World world, int x, int y, int z, boolean isDebugging) {
         int startX = x - headX;
         int startY = y - headY;
         int startZ = z - headZ;
@@ -196,6 +199,26 @@ public class RitualStructure {
                     int metadata = world.getBlockMetadata(startX + i, startY + j, startZ + k);
                     StructureBlock structureBlock = structureMap[i][j][k];
                     if(structureBlock.block != block || (structureBlock.metadata != -1 && structureBlock.metadata != metadata)) {
+                        if(isDebugging) {
+                            StringBuilder sb = new StringBuilder("Expected block ");
+                            GameRegistry.UniqueIdentifier identifier = GameRegistry.findUniqueIdentifierFor(structureBlock.block);
+                            if(identifier != null) {
+                                sb.append(identifier.modId).append(":").append(identifier.name);
+                            } else {
+                                sb.append(structureBlock.block.getUnlocalizedName());
+                            }
+                            sb.append(":").append(structureBlock.metadata == -1 ? "*" : structureBlock.metadata);
+                            sb.append(" but got ");
+                            identifier = GameRegistry.findUniqueIdentifierFor(block);
+                            if(identifier != null) {
+                                sb.append(identifier.modId).append(":").append(identifier.name);
+                            } else {
+                                sb.append(block.getUnlocalizedName());
+                            }
+                            sb.append(":").append(metadata);
+                            sb.append(" at ").append(startX + i).append(", ").append(startY + j).append(", ").append(startZ + k);
+                            entityPlayer.addChatMessage(new ChatComponentText(sb.toString()));
+                        }
                         return false;
                     }
                 }
@@ -219,6 +242,27 @@ public class RitualStructure {
                             world.setBlockToAir(startX + i, startY + j, startZ + k);
                         }
                     }
+                }
+            }
+        }
+    }
+
+    public void spawnStructure(World world, int x, int y, int z) {
+        int startX = x - headX;
+        int startY = y - headY;
+        int startZ = z - headZ;
+        for(int i = 0; i < structureMap.length; i++) {
+            for(int j = 0; j < structureMap[i].length; j++) {
+                for(int k = 0; k < structureMap[i][j].length; k++) {
+                    Block block = world.getBlock(startX + i, startY + j, startZ + k);
+                    int metadata = world.getBlockMetadata(startX + i, startY + j, startZ + k);
+                    block.breakBlock(world, startX + i, startY + j, startZ + k, block, metadata);
+                    StructureBlock structureBlock = structureMap[i][j][k];
+                    int newMetadata = structureBlock.metadata != -1 ? structureBlock.metadata : 0;
+                    if(structureBlock.block == Blocks.skull) {
+                        newMetadata = 1;
+                    }
+                    world.setBlock(startX + i, startY + j, startZ + k, structureBlock.block, newMetadata, 1 | 2);
                 }
             }
         }
