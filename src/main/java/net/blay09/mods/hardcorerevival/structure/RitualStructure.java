@@ -1,9 +1,9 @@
-package net.blay09.mods.hardcorerevival;
+package net.blay09.mods.hardcorerevival.structure;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.blay09.mods.hardcorerevival.HardcoreRevival;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
@@ -13,39 +13,15 @@ import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTException;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
+import net.minecraftforge.oredict.OreDictionary;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 
 public class RitualStructure {
-
-    public static class RitualException extends RuntimeException {
-        public RitualException(String message) {
-            super(message);
-        }
-    }
-
-    public String getActivationItemHelpText() {
-        return activationItemHelpText;
-    }
-
-    public String[] getStructureHelpText() {
-        return structureHelpText;
-    }
-
-    public static class StructureBlock {
-        public final Block block;
-        public final int metadata;
-
-        public StructureBlock(Block block, int metadata) {
-            this.block = block;
-            this.metadata = metadata;
-        }
-    }
 
     private final ItemStack activationItemStack;
     private final boolean consumeActivationItem;
@@ -60,7 +36,8 @@ public class RitualStructure {
     public RitualStructure(JsonObject object) {
         JsonObject mapping = object.getAsJsonObject("mapping");
         final Map<Character, StructureBlock> blockMapping = new HashMap<>();
-        blockMapping.put('H', new StructureBlock(Blocks.skull, -1));
+        blockMapping.put('H', new DefaultStructureBlock(Blocks.skull, -1));
+        blockMapping.put(' ', new DefaultStructureBlock(Blocks.air, -1));
         for(Map.Entry<String, JsonElement> entry : mapping.entrySet()) {
             if(entry.getKey().length() != 1) {
                 throw new RitualException("Configured hardcore revival ritual activation structure is invalid: mapping keys need to be one character long");
@@ -70,17 +47,32 @@ public class RitualStructure {
                 throw new RitualException("Configured hardcore revival ritual activation structure is invalid: mapping 'H' is reserved for the player head");
             }
             if(blockMapping.containsKey(c)) {
-                throw new RitualException("Configured hardcore revival ritual activation structure is invalid: mapping '" + entry.getKey() + "' is alerady defined");
+                throw new RitualException("Configured hardcore revival ritual activation structure is invalid: mapping '" + entry.getKey() + "' is already defined");
             }
-            Matcher matcher = HardcoreRevival.BLOCK_PATTERN.matcher(entry.getValue().getAsString());
+            String value = entry.getValue().getAsString();
+            if(value.equalsIgnoreCase("any")) {
+                blockMapping.put(c, new AnyStructureBlock());
+            } else if(value.equalsIgnoreCase("solid")) {
+                blockMapping.put(c, new AnySolidStructureBlock());
+            }
+            Matcher matcher = HardcoreRevival.BLOCK_PATTERN.matcher(value);
             if(matcher.find()) {
                 String blockName = matcher.group(1);
-                Block block = (Block) Block.blockRegistry.getObject(blockName);
-                if(block == null) {
-                    throw new RitualException("Configured hardcore revival ritual activation structure is invalid: block " + blockName + " can not be found");
+                int namespaceIdx = blockName.indexOf(':');
+                if(blockName.substring(0, namespaceIdx).equals("ore")) {
+                    String oreName = blockName.substring(namespaceIdx + 1);
+                    if(!OreDictionary.doesOreNameExist(oreName)) {
+                        throw new RitualException("Configured hardcore revival ritual activation structure is invalid: ore dict name " + oreName + " can not be found");
+                    }
+                    blockMapping.put(c, new OreDictStructureBlock(oreName));
+                } else {
+                    Block block = (Block) Block.blockRegistry.getObject(blockName);
+                    if (block == null) {
+                        throw new RitualException("Configured hardcore revival ritual activation structure is invalid: block " + blockName + " can not be found");
+                    }
+                    String metadata = matcher.group(2);
+                    blockMapping.put(c, new DefaultStructureBlock(block, metadata != null ? Integer.parseInt(matcher.group(2)) : 0));
                 }
-                String metadata = matcher.group(2);
-                blockMapping.put(c, new StructureBlock(block, metadata != null ? Integer.parseInt(matcher.group(2)) : 0));
             } else {
                 throw new RitualException("Configured hardcore revival ritual mappings are invalid: incorrect block format for " + entry.getValue().getAsString());
             }
@@ -198,26 +190,9 @@ public class RitualStructure {
                     Block block = world.getBlock(startX + i, startY + j, startZ + k);
                     int metadata = world.getBlockMetadata(startX + i, startY + j, startZ + k);
                     StructureBlock structureBlock = structureMap[i][j][k];
-                    if(structureBlock.block != block || (structureBlock.metadata != -1 && structureBlock.metadata != metadata)) {
+                    if(!structureBlock.passes(world, startX + i, startY + j, startZ + k, block, metadata)) {
                         if(isDebugging) {
-                            StringBuilder sb = new StringBuilder("Expected block ");
-                            GameRegistry.UniqueIdentifier identifier = GameRegistry.findUniqueIdentifierFor(structureBlock.block);
-                            if(identifier != null) {
-                                sb.append(identifier.modId).append(":").append(identifier.name);
-                            } else {
-                                sb.append(structureBlock.block.getUnlocalizedName());
-                            }
-                            sb.append(":").append(structureBlock.metadata == -1 ? "*" : structureBlock.metadata);
-                            sb.append(" but got ");
-                            identifier = GameRegistry.findUniqueIdentifierFor(block);
-                            if(identifier != null) {
-                                sb.append(identifier.modId).append(":").append(identifier.name);
-                            } else {
-                                sb.append(block.getUnlocalizedName());
-                            }
-                            sb.append(":").append(metadata);
-                            sb.append(" at ").append(startX + i).append(", ").append(startY + j).append(", ").append(startZ + k);
-                            entityPlayer.addChatMessage(new ChatComponentText(sb.toString()));
+                            structureBlock.printError(world, startX + i, startY + j, startZ + k, entityPlayer);
                         }
                         return false;
                     }
@@ -237,7 +212,7 @@ public class RitualStructure {
                     Block block = world.getBlock(startX + i, startY + j, startZ + k);
                     int metadata = world.getBlockMetadata(startX + i, startY + j, startZ + k);
                     StructureBlock structureBlock = structureMap[i][j][k];
-                    if(structureBlock.block == block && (structureBlock.metadata == -1 || structureBlock.metadata == metadata)) {
+                    if(structureBlock.passes(world, startX + i, startY + j, startZ + k, block, metadata)) {
                         if(consumeMap[i][j][k]) {
                             world.setBlockToAir(startX + i, startY + j, startZ + k);
                         }
@@ -258,11 +233,7 @@ public class RitualStructure {
                     int metadata = world.getBlockMetadata(startX + i, startY + j, startZ + k);
                     block.breakBlock(world, startX + i, startY + j, startZ + k, block, metadata);
                     StructureBlock structureBlock = structureMap[i][j][k];
-                    int newMetadata = structureBlock.metadata != -1 ? structureBlock.metadata : 0;
-                    if(structureBlock.block == Blocks.skull) {
-                        newMetadata = 1;
-                    }
-                    world.setBlock(startX + i, startY + j, startZ + k, structureBlock.block, newMetadata, 1 | 2);
+                    structureBlock.spawnBlock(world, startX + i, startY + j, startZ + k);
                 }
             }
         }
@@ -280,6 +251,14 @@ public class RitualStructure {
 
     public int getHeadY() {
         return headY;
+    }
+
+    public String getActivationItemHelpText() {
+        return activationItemHelpText;
+    }
+
+    public String[] getStructureHelpText() {
+        return structureHelpText;
     }
 
     public static void exportRitual(World world, int x, int y, int z, int x2, int y2, int z2) {

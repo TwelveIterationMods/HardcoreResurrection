@@ -5,9 +5,11 @@ import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import net.blay09.mods.hardcorerevival.structure.RitualException;
+import net.blay09.mods.hardcorerevival.structure.RitualStructure;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -69,7 +71,7 @@ public class HardcoreRevival {
 
     public static String helpBookText;
     public static RitualStructure ritualStructure;
-    public static RitualStructure.RitualException ritualStructureError;
+    public static RitualException ritualStructureError;
 
     private File configDir;
     private File configFile;
@@ -78,7 +80,12 @@ public class HardcoreRevival {
     public void preInit(FMLPreInitializationEvent event) {
         configDir = event.getModConfigurationDirectory();
         configFile = event.getSuggestedConfigurationFile();
+    }
+
+    @Mod.EventHandler
+    public void postInit(FMLPostInitializationEvent event) {
         loadConfig();
+        proxy.postInit(event);
     }
 
     public void loadConfig() {
@@ -155,8 +162,8 @@ public class HardcoreRevival {
                 JsonObject object = gson.fromJson(new FileReader(new File(hardcoreRevivalDir, ritualStructureName + ".json")), JsonObject.class);
                 ritualStructure = new RitualStructure(object);
             } catch (FileNotFoundException e) {
-                ritualStructureError = new RitualStructure.RitualException("The ritual file " + ritualStructureName + " could not be found");
-            } catch (RitualStructure.RitualException e) {
+                ritualStructureError = new RitualException("The ritual file " + ritualStructureName + " could not be found");
+            } catch (RitualException e) {
                 ritualStructureError = e;
             }
             if(ritualStructureError != null) {
@@ -180,11 +187,6 @@ public class HardcoreRevival {
                 e.printStackTrace();
             }
         }
-    }
-
-    @Mod.EventHandler
-    public void init(FMLInitializationEvent event) {
-        proxy.init(event);
     }
 
     @Mod.EventHandler

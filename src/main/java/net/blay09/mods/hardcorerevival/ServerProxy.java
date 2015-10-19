@@ -2,11 +2,12 @@ package net.blay09.mods.hardcorerevival;
 
 import com.mojang.authlib.GameProfile;
 import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
+import net.blay09.mods.hardcorerevival.structure.RitualStructure;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.effect.EntityLightningBolt;
@@ -42,7 +43,7 @@ public class ServerProxy extends CommonProxy {
 
     private int tickTimer;
 
-    public void init(FMLInitializationEvent event) {
+    public void postInit(FMLPostInitializationEvent event) {
         if (!HardcoreRevival.enableHardcoreRevival) {
             return;
         }
