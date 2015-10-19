@@ -21,7 +21,7 @@ public class CommandHardcoreRevival extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/hardcorerevival (givehead|givebook|spawngrave|spawnritual|revive|debug|build|reload) [...]";
+        return "/hardcorerevival (givehead|givebook|spawngrave|spawnritual|revive|debug|reload) [...]";
     }
 
     @Override
@@ -78,14 +78,14 @@ public class CommandHardcoreRevival extends CommandBase {
                 ((EntityPlayer) sender).inventory.addItemStackToInventory(itemStack);
                 sender.addChatMessage(new ChatComponentText("Hardcore Stick of Debugging Get! Right click the head in a structure to investigate issues. You can also right click any block to get its internal name and metadata."));
             }
-        } else if(cmd.equals("build")) {
-            if(sender instanceof EntityPlayer) {
-                ItemStack itemStack = new ItemStack(Items.stick);
-                itemStack.setStackDisplayName("Hardcore Stick of Building");
-                itemStack.getTagCompound().setBoolean("HardcoreRevivalBuilder", true);
-                ((EntityPlayer) sender).inventory.addItemStackToInventory(itemStack);
-                sender.addChatMessage(new ChatComponentText("Hardcore Stick of Building Get! Too bad it doesn't actually work yet."));
-            }
+//        } else if(cmd.equals("build")) {
+//            if(sender instanceof EntityPlayer) {
+//                ItemStack itemStack = new ItemStack(Items.stick);
+//                itemStack.setStackDisplayName("Hardcore Stick of Building");
+//                itemStack.getTagCompound().setBoolean("HardcoreRevivalBuilder", true);
+//                ((EntityPlayer) sender).inventory.addItemStackToInventory(itemStack);
+//                sender.addChatMessage(new ChatComponentText("Hardcore Stick of Building Get! Right click the outer corner of your built structure, then right click the opposite corner. Everything *inside* that box will be saved as a structure inside generated.json."));
+//            }
         } else if (cmd.equals("reload")) {
             HardcoreRevival.instance.loadConfig();
             if(HardcoreRevival.ritualStructureError != null) {
@@ -106,7 +106,7 @@ public class CommandHardcoreRevival extends CommandBase {
     @Override
     public List addTabCompletionOptions(ICommandSender sender, String[] args) {
         if (args.length == 1) {
-            return getListOfStringsMatchingLastWord(args, "givebook", "givehead", "revive", "spawngrave", "spawnritual", "reload", "debug", "build");
+            return getListOfStringsMatchingLastWord(args, "givebook", "givehead", "revive", "spawngrave", "spawnritual", "reload", "debug");
         } else if(args.length == 2) {
             return getListOfStringsMatchingLastWord(args, MinecraftServer.getServer().getAllUsernames());
         }

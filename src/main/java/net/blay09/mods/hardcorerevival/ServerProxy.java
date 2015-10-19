@@ -149,15 +149,27 @@ public class ServerProxy extends CommonProxy {
         if(event.entityPlayer instanceof FakePlayer && HardcoreRevival.disallowFakePlayers) {
             return;
         }
+        if (event.action != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
         ItemStack heldItem = event.entityPlayer.getHeldItem();
         boolean isDebugging = heldItem != null && heldItem.getItem() == Items.stick && heldItem.hasTagCompound() && heldItem.getTagCompound().hasKey("HardcoreRevivalDebugger");
+        boolean isBuilding = heldItem != null && heldItem.getItem() == Items.stick && heldItem.hasTagCompound() && heldItem.getTagCompound().hasKey("HardcoreRevivalBuilder");
+        if(isBuilding) {
+            if(heldItem.getTagCompound().hasKey("HardcoreRevivalBuilderCoords")) {
+                int[] first = heldItem.getTagCompound().getIntArray("HardcoreRevivalBuilderCoords");
+                RitualStructure.exportRitual(event.world, first[0], first[1], first[2], event.x, event.y, event.z);
+                event.entityPlayer.addChatMessage(new ChatComponentText("Structure has been exported to generated.json"));
+            } else {
+                heldItem.getTagCompound().setIntArray("HardcoreRevivalBuilderCoords", new int[] {event.x, event.y, event.z});
+                event.entityPlayer.addChatMessage(new ChatComponentText("Coordinates stored, now rightclick the opposite outer corner."));
+            }
+            return;
+        }
         if(HardcoreRevival.ritualStructure == null) {
             if(isDebugging) {
                 event.entityPlayer.addChatMessage(new ChatComponentText("The currently loaded ritual structure is invalid."));
             }
-            return;
-        }
-        if (event.action != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
             return;
         }
         Block block = event.world.getBlock(event.x, event.y, event.z);

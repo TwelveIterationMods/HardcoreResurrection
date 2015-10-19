@@ -282,5 +282,8 @@ public class RitualStructure {
         return headY;
     }
 
+    public static void exportRitual(World world, int x, int y, int z, int x2, int y2, int z2) {
+
+    }
 }
 
