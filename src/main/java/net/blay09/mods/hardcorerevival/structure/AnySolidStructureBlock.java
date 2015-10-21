@@ -10,7 +10,7 @@ import net.minecraft.world.World;
 public class AnySolidStructureBlock extends StructureBlock {
     @Override
     public boolean passes(World world, int x, int y, int z, Block block, int metadata) {
-        return true;
+        return block.isOpaqueCube();
     }
 
     @Override

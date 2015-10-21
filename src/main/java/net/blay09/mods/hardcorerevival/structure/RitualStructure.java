@@ -54,27 +54,28 @@ public class RitualStructure {
                 blockMapping.put(c, new AnyStructureBlock());
             } else if(value.equalsIgnoreCase("solid")) {
                 blockMapping.put(c, new AnySolidStructureBlock());
-            }
-            Matcher matcher = HardcoreRevival.BLOCK_PATTERN.matcher(value);
-            if(matcher.find()) {
-                String blockName = matcher.group(1);
-                int namespaceIdx = blockName.indexOf(':');
-                if(blockName.substring(0, namespaceIdx).equals("ore")) {
-                    String oreName = blockName.substring(namespaceIdx + 1);
-                    if(!OreDictionary.doesOreNameExist(oreName)) {
-                        throw new RitualException("Configured hardcore revival ritual activation structure is invalid: ore dict name " + oreName + " can not be found");
-                    }
-                    blockMapping.put(c, new OreDictStructureBlock(oreName));
-                } else {
-                    Block block = (Block) Block.blockRegistry.getObject(blockName);
-                    if (block == null) {
-                        throw new RitualException("Configured hardcore revival ritual activation structure is invalid: block " + blockName + " can not be found");
-                    }
-                    String metadata = matcher.group(2);
-                    blockMapping.put(c, new DefaultStructureBlock(block, metadata != null ? Integer.parseInt(matcher.group(2)) : 0));
-                }
             } else {
-                throw new RitualException("Configured hardcore revival ritual mappings are invalid: incorrect block format for " + entry.getValue().getAsString());
+                Matcher matcher = HardcoreRevival.BLOCK_PATTERN.matcher(value);
+                if (matcher.find()) {
+                    String blockName = matcher.group(1);
+                    int namespaceIdx = blockName.indexOf(':');
+                    if (namespaceIdx != -1 && blockName.substring(0, namespaceIdx).equals("ore")) {
+                        String oreName = blockName.substring(namespaceIdx + 1);
+                        if (!OreDictionary.doesOreNameExist(oreName)) {
+                            throw new RitualException("Configured hardcore revival ritual activation structure is invalid: ore dict name " + oreName + " can not be found");
+                        }
+                        blockMapping.put(c, new OreDictStructureBlock(oreName));
+                    } else {
+                        Block block = (Block) Block.blockRegistry.getObject(blockName);
+                        if (block == null) {
+                            throw new RitualException("Configured hardcore revival ritual activation structure is invalid: block " + blockName + " can not be found");
+                        }
+                        String metadata = matcher.group(2);
+                        blockMapping.put(c, new DefaultStructureBlock(block, metadata != null ? Integer.parseInt(matcher.group(2)) : 0));
+                    }
+                } else {
+                    throw new RitualException("Configured hardcore revival ritual mappings are invalid: incorrect block format for " + entry.getValue().getAsString());
+                }
             }
         }
         boolean structureContainsHead = false;
