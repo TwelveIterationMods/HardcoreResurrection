@@ -224,6 +224,10 @@ public class ServerProxy extends CommonProxy {
             return;
         }
         EntityPlayerMP deadPlayer = MinecraftServer.getServer().getConfigurationManager().func_152612_a(skull.func_152108_a().getName());
+        if(deadPlayer == null) {
+            event.entityPlayer.addChatMessage(new ChatComponentText("Nothing happens. It appears the soul is not reachable right now."));
+            return;
+        }
         if(deadPlayer.getHealth() > 0) {
             event.entityPlayer.addChatMessage(new ChatComponentText("You can't revive souls that reside in the world of the living, silly."));
             return;
