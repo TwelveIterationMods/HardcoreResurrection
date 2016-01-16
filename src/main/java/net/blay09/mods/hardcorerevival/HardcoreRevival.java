@@ -330,7 +330,7 @@ public class HardcoreRevival {
 
     private static boolean isValidGraveBlock(World world, int x, int y, int z) {
         Block block = world.getBlock(x, y, z);
-        return (block.isAir(world, x, y, z) || block == Blocks.cobblestone || block == Blocks.stone || block == Blocks.dirt || block == Blocks.grass || block == Blocks.gravel || block == Blocks.sand || block == Blocks.sandstone);
+        return (block.isAir(world, x, y, z) ||block == Blocks.cobblestone || block == Blocks.stone || block == Blocks.dirt || block == Blocks.grass || block == Blocks.gravel || block == Blocks.sand || block == Blocks.sandstone || block == Blocks.end_stone || block == Blocks.netherrack);
     }
 
     private static boolean isValidGraveFlowerBlock(World world, int x, int y, int z) {
