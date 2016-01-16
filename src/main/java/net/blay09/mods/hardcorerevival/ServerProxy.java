@@ -154,7 +154,7 @@ public class ServerProxy extends CommonProxy {
             if(event.entityPlayer instanceof FakePlayer && HardcoreRevival.disallowFakePlayers) {
                 return;
             }
-            if(event.target instanceof EntityOcelot && ((EntityOcelot) event.target).isTamed()) {
+            if(event.target instanceof EntityOcelot && ((EntityOcelot) event.target).isTamed() && ((EntityOcelot) event.target).getCustomNameTag().equals("Gamerkitty_1")) {
                 if (event.entityPlayer.getHeldItem() != null && event.entityPlayer.getHeldItem().getItem() == Items.golden_apple) {
                     EntityPlayerMP deadKitty = MinecraftServer.getServer().getConfigurationManager().func_152612_a("Gamerkitty_1");
                     EntityPlayer kitty = HardcoreRevival.revivePlayer(deadKitty, event.target.worldObj, (int) event.target.posX, (int) event.target.posY, (int) event.target.posZ);
