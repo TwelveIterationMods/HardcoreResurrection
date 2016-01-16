@@ -13,6 +13,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.entity.item.EntityEnderEye;
 import net.minecraft.entity.item.EntityFireworkRocket;
+import net.minecraft.entity.passive.EntityOcelot;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
@@ -31,6 +32,7 @@ import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.minecart.MinecartUpdateEvent;
+import net.minecraftforge.event.entity.player.EntityInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 
 import java.util.*;
@@ -40,6 +42,7 @@ public class ServerProxy extends CommonProxy {
 
     public static final Map<GameProfile, EntityPlayerMP> deadPlayers = new HashMap<>();
     public static final List<GraveLocator> graveLocators = new ArrayList<>();
+    public static final Random random = new Random();
 
     private int tickTimer;
 
@@ -140,6 +143,31 @@ public class ServerProxy extends CommonProxy {
                         graveLocator.owner.addChatMessage(new ChatComponentText("Nothing happens. It appears " + itemStack.getDisplayName() + "'s soul isn't here right now."));
                     }
                     git.remove();
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerInteractWithEntity(EntityInteractEvent event) {
+        if(HardcoreRevival.enableSillyThings) {
+            if(event.entityPlayer instanceof FakePlayer && HardcoreRevival.disallowFakePlayers) {
+                return;
+            }
+            if(event.target instanceof EntityOcelot && ((EntityOcelot) event.target).isTamed()) {
+                if (event.entityPlayer.getHeldItem() != null && event.entityPlayer.getHeldItem().getItem() == Items.golden_apple) {
+                    EntityPlayerMP deadKitty = MinecraftServer.getServer().getConfigurationManager().func_152612_a("Gamerkitty_1");
+                    EntityPlayer kitty = HardcoreRevival.revivePlayer(deadKitty, event.target.worldObj, (int) event.target.posX, (int) event.target.posY, (int) event.target.posZ);
+                    if (kitty != null) {
+                        event.target.setDead();
+                        kitty.worldObj.addWeatherEffect(new EntityLightningBolt(kitty.worldObj, kitty.posX, kitty.posY, kitty.posZ));
+                        for(int i = 0; i < 5; i++) {
+                            double motionX = random.nextGaussian() * 0.02;
+                            double motionY = random.nextGaussian() * 0.02;
+                            double motionZ = random.nextGaussian() * 0.02;
+                            event.target.worldObj.spawnParticle("heart", kitty.posX + (random.nextFloat() * kitty.width * 3f) - kitty.width, kitty.posY + 0.5 + (random.nextFloat() * kitty.height), kitty.posZ + (random.nextFloat() * kitty.width * 3f) - kitty.width, motionX, motionY, motionZ);
+                        }
+                    }
                 }
             }
         }
